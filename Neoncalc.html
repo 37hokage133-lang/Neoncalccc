@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeonCalc</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Inter, system-ui, sans-serif;
+    color: white;
+
+    background:
+        radial-gradient(circle at 20% 20%, #273cff 0, transparent 32%),
+        radial-gradient(circle at 80% 80%, #8b2cff 0, transparent 30%),
+        #080a12;
+}
+
+.calculator {
+    width: min(390px, 94vw);
+    padding: 22px;
+
+    border: 1px solid #ffffff22;
+    border-radius: 30px;
+
+    background: #111522cc;
+    backdrop-filter: blur(22px);
+
+    box-shadow: 0 30px 80px #0008;
+}
+
+.brand {
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: .65;
+    margin: 2px 4px 14px;
+}
+
+.display {
+    min-height: 125px;
+    padding: 20px;
+
+    border-radius: 22px;
+    background: #080b13;
+    border: 1px solid #ffffff12;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    text-align: right;
+    overflow: hidden;
+}
+
+.history {
+    height: 24px;
+    color: #8790a8;
+    font-size: 15px;
+}
+
+.value {
+    font-size: 43px;
+    font-weight: 700;
+    letter-spacing: -2px;
+
+    overflow: auto;
+    scrollbar-width: none;
+}
+
+.keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 11px;
+    margin-top: 15px;
+}
+
+button {
+    border: 0;
+    border-radius: 18px;
+    min-height: 64px;
+
+    font-size: 20px;
+    font-weight: 650;
+
+    color: #eef1ff;
+    background: #1b2030;
+
+    cursor: pointer;
+    transition: .12s;
+
+    box-shadow:
+        inset 0 1px #ffffff0d,
+        0 5px 15px #0003;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+}
+
+button:active {
+    transform: scale(.96);
+}
+
+.operator {
+    background: #252c43;
+}
+
+.ac {
+    background: #3a2030;
+    color: #ff9fbd;
+}
+
+.equal {
+    background: linear-gradient(135deg, #4d62ff, #a13dff);
+}
+
+.zero {
+    grid-column: span 2;
+}
+</style>
+</head>
+
+<body>
+
+<div class="calculator">
+
+    <div class="brand">NeonCalc</div>
+
+    <div class="display">
+        <div class="history" id="history"></div>
+        <div class="value" id="display">0</div>
+    </div>
+
+    <div class="keys">
+
+        <button class="ac" onclick="clearAll()">AC</button>
+        <button onclick="backspace()">⌫</button>
+        <button class="operator" onclick="percent()">%</button>
+        <button class="operator" onclick="choose('/')">÷</button>
+
+        <button onclick="input('7')">7</button>
+        <button onclick="input('8')">8</button>
+        <button onclick="input('9')">9</button>
+        <button class="operator" onclick="choose('*')">×</button>
+
+        <button onclick="input('4')">4</button>
+        <button onclick="input('5')">5</button>
+        <button onclick="input('6')">6</button>
+        <button class="operator" onclick="choose('-')">−</button>
+
+        <button onclick="input('1')">1</button>
+        <button onclick="input('2')">2</button>
+        <button onclick="input('3')">3</button>
+        <button class="operator" onclick="choose('+')">+</button>
+
+        <button class="zero" onclick="input('0')">0</button>
+        <button onclick="input('.')">.</button>
+        <button class="equal" onclick="calculate()">=</button>
+
+    </div>
+</div>
+
+<script>
+
+let current = '0';
+let previous = null;
+let op = null;
+let waiting = false;
+
+const display = document.getElementById('display');
+const history = document.getElementById('history');
+
+function render() {
+    display.textContent = current;
+}
+
+function input(x) {
+
+    if (waiting) {
+        current = '0';
+        waiting = false;
+    }
+
+    if (x === '.' && current.includes('.')) {
+        return;
+    }
+
+    current =
+        current === '0' && x !== '.'
+            ? x
+            : current + x;
+
+    render();
+}
+
+function choose(o) {
+
+    if (op && !waiting) {
+        calculate();
+    }
+
+    previous = Number(current);
+    op = o;
+    waiting = true;
+
+    history.textContent =
+        current + ' ' + symbol(o);
+}
+
+function symbol(o) {
+
+    if (o === '*') return '×';
+    if (o === '/') return '÷';
+    if (o === '-') return '−';
+
+    return '+';
+}
+
+function calculate() {
+
+    if (previous === null || !op) {
+        return;
+    }
+
+    const b = Number(current);
+
+    let result;
+
+    if (op === '+') {
+        result = previous + b;
+    }
+
+    if (op === '-') {
+        result = previous - b;
+    }
+
+    if (op === '*') {
+        result = previous * b;
+    }
+
+    if (op === '/') {
+        result = previous / b;
+    }
+
+    history.textContent =
+        previous + ' ' +
+        symbol(op) + ' ' +
+        b + ' =';
+
+    current =
+        Number.isFinite(result)
+            ? String(Math.round(result * 1e12) / 1e12)
+            : 'Ошибка';
+
+    previous = null;
+    op = null;
+    waiting = true;
+
+    render();
+}
+
+function clearAll() {
+
+    current = '0';
+    previous = null;
+    op = null;
+    waiting = false;
+
+    history.textContent = '';
+
+    render();
+}
+
+function backspace() {
+
+    if (!waiting) {
+        current =
+            current.length > 1
+                ? current.slice(0, -1)
+                : '0';
+    }
+
+    render();
+}
+
+function percent() {
+
+    current = String(Number(current) / 100);
+
+    render();
+}
+
+document.addEventListener('keydown', e => {
+
+    if (/[0-9.]/.test(e.key)) {
+        input(e.key);
+    }
+
+    else if (['+', '-', '*', '/'].includes(e.key)) {
+        choose(e.key);
+    }
+
+    else if (e.key === 'Enter' || e.key === '=') {
+        calculate();
+    }
+
+    else if (e.key === 'Escape') {
+        clearAll();
+    }
+
+    else if (e.key === 'Backspace') {
+        backspace();
+    }
+
+});
+
+</script>
+
+</body>
+  </html>
